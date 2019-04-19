@@ -1,1 +1,8 @@
-/.vscode
+__pycache__/
+.vscode
+
+# cookies
+cookies.json
+
+# test
+test.py
