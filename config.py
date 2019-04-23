@@ -10,9 +10,16 @@ HEADERS = {
 BASE_HOST = "bbs.saraba1st.com"
 BASE_URL = "https://" + BASE_HOST + "/2b/"
 BASE_API_URL = BASE_URL + "api/mobile/"
-URL_FORUM = BASE_URL + "forum.php"
 URL_LOGIN = (
     BASE_URL
     + "member.php?mod=logging&action=login&loginsubmit=yes&&handlekey=loginform&inajax=1"
 )
 URL_MEMBER = BASE_URL + "home.php?mod=space&do=profile&from=space"
+URL_FORUM_LIST = BASE_API_URL + "index.php?module=forumindex"
+URL_THREAD_LIST = (
+    BASE_API_URL
+    + "index.php?module=forumdisplay&version=4&filter=typeid&tpp=50&fid={}&page={}"
+)
+URL_POST_LIST = (
+    BASE_API_URL + "index.php?module=viewthread&version=1&ppp=50&tid={}&page={}"
+)

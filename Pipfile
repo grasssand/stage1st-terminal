@@ -9,6 +9,7 @@ black = "*"
 
 [packages]
 requests-html = "*"
+crayons = "*"
 
 [requires]
 python_version = "3.7"

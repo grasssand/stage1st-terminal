@@ -6,3 +6,4 @@ cookies.json
 
 # test
 test.py
+*.bak
