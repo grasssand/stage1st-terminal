@@ -18,8 +18,14 @@ URL_MEMBER = BASE_URL + "home.php?mod=space&do=profile&from=space"
 URL_FORUM_LIST = BASE_API_URL + "index.php?module=forumindex"
 URL_THREAD_LIST = (
     BASE_API_URL
-    + "index.php?module=forumdisplay&version=4&filter=typeid&tpp=50&fid={}&page={}"
+    + "index.php?module=forumdisplay&version=4&filter=typeid&tpp=30&fid={}&page={}"
 )
-URL_POST_LIST = (
+URL_REPLY_LIST = (
     BASE_API_URL + "index.php?module=viewthread&version=1&ppp=50&tid={}&page={}"
 )
+
+FORUM_LIST_KEY = "forumlist"
+FORUM_KEY = "forum"
+THREAD_LIST_KEY = "forum_threadlist"
+THREAD_KEY = "thread"
+REPLY_LIST_KEY = "postlist"
