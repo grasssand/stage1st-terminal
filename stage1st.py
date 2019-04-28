@@ -9,14 +9,15 @@ from xml.etree import ElementTree
 
 from requests_html import HTMLSession
 
-from config import *
-from exception import LoginException
+from config import HEADERS, URL_LOGIN, COOKIES_FILE
+from exception import LoginError, ResourceError
 
 
 class Stage1stClient:
     def __init__(self, cookies=None):
         self._session = HTMLSession()
         self._session.headers.update(HEADERS)
+        self.content = None
 
         if os.path.isfile(COOKIES_FILE):
             self.login_with_cookies(COOKIES_FILE)
@@ -26,13 +27,12 @@ class Stage1stClient:
     def login_with_password(self):
         username = input("userame: ")
         password = getpass.getpass("password: ")
-        message, cookies = self.login(username, password)
-        return cookies
+        message = self.login(username, password)
+        print(message)
 
-    def login_with_cookies(self, cookies):
-        if os.path.isfile(cookies):
-            with open(cookies) as f:
-                cookies = f.read()
+    def login_with_cookies(self, cookies_file):
+        with open(cookies_file) as f:
+            cookies = f.read()
         ck = json.loads(cookies)
         self._session.cookies.update(ck)
 
@@ -45,27 +45,30 @@ class Stage1stClient:
         }
         resp = self._session.post(URL_LOGIN, data=data)
         content = ElementTree.fromstring(resp.content).text
-        re_content = re.match(
+        state, message = re.match(
             r".+(errorhandle_loginform|succeedhandle_loginform)\((.+)\,\s?\{.+", content
-        )
-        state, message = re_content.group(1), re_content.group(2)
+        ).groups()
         if state == "errorhandle_loginform":
-            raise LoginException(message)
+            raise LoginError(message)
+
         cookies = json.dumps(self._session.cookies.get_dict())
         self.create_cookies_file(cookies)
 
-        return message, cookies
+        return message
 
     def create_cookies_file(self, cookies):
         if cookies:
             with open(COOKIES_FILE, "w") as f:
                 f.write(cookies)
 
-    def test(self):
-        r = self._session.get("")
+    def _get_content(self):
+        url = self._url if getattr(self, "_url", None) else self.url
+        resp = self._session.get(url)
+        resp = resp.json()
+        if not resp["Variables"]["member_username"]:
+            print("登陆过期")
+            self.login_with_password()
+        self.content = resp["Variables"]
 
-
-if __name__ == "__main__":
-    s = Stage1stClient()
-    r = s.login_with_password()
-    print(r)
+    def refresh(self):
+        self._get_content()
