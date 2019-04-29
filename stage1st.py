@@ -17,6 +17,7 @@ class Stage1stClient:
     def __init__(self, cookies=None):
         self._session = HTMLSession()
         self._session.headers.update(HEADERS)
+        self._url = None
         self.content = None
 
         if os.path.isfile(COOKIES_FILE):
@@ -62,13 +63,17 @@ class Stage1stClient:
                 f.write(cookies)
 
     def _get_content(self):
-        url = self._url if getattr(self, "_url", None) else self.url
+        url = self._url if getattr(self, "_url") else self.url
         resp = self._session.get(url)
         resp = resp.json()
         if not resp["Variables"]["member_username"]:
             print("登陆过期")
             self.login_with_password()
         self.content = resp["Variables"]
+
+    @property
+    def url(self):
+        pass
 
     def refresh(self):
         self._get_content()
