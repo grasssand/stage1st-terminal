@@ -4,8 +4,6 @@
 import re
 import sys
 
-import crayons
-
 from config import (
     REPLY_LIST_KEY,
     THREAD_KEY,
@@ -15,7 +13,7 @@ from config import (
 )
 from reply import Reply
 from stage1st import Stage1stClient
-from util import check_attr
+from util import check_attr, colored, cprint
 
 
 class Thread(Stage1stClient):
@@ -51,6 +49,7 @@ class Thread(Stage1stClient):
         self._replies_count = replies_count
         self._message = message
         self._cur_page = page
+        self._index = {}
 
     @property
     def tid(self):
@@ -131,8 +130,9 @@ class Thread(Stage1stClient):
         if self.content is None:
             self._get_content()
         replies_list = self.content[self._child]
-        print(f"\n{'* ' * 5} {crayons.yellow(self.subject, bold=True)} {' *' * 5}\n")
+        cprint(f"\n{'* ' * 5} {self.subject} {' *' * 5}\n", "yellow", attrs=["bold"])
         for i, reply in enumerate(replies_list):
+            self._index[str(i)] = reply["pid"]
             r = Reply(
                 reply["pid"],
                 reply["tid"],
@@ -199,9 +199,9 @@ class Thread(Stage1stClient):
     def termianl(self):
         self.replies
         while True:
-            ipt = input(f"Thread {self._tid} p{self._cur_page} $ ")
+            ipt = input(f"Thread {self._tid} {self._cur_page}/{self.max_page} $ ")
             if ipt:
-                opt, args = re.match(r"\s*(\w+)\s*(\d*)", ipt).groups()
+                opt, args = re.match(r"\s*([a-z]*)\s*(\d*)", ipt).groups()
                 if opt == "q":
                     break
                 elif opt == "n":
@@ -242,9 +242,8 @@ class Thread(Stage1stClient):
 
     def _info(self, idx, reply_cls):
         return (
-            f"「{crayons.red(idx)}」 {'=' * 50}\n"
-            f"[{crayons.cyan(reply_cls.pid, bold=True)}]\t{crayons.green(reply_cls.dateline)}\t"
-            f"{crayons.yellow(reply_cls.author)}\n"
-            f"{'-' * 50}\n"
-            f"{crayons.normal(reply_cls.message)}\n"
+            f"「{colored(idx, 'red')}」 {colored('=' * 50, 'yellow')}\n"
+            f"{colored(reply_cls.dateline, 'green')}\t"
+            f"{colored(reply_cls.author, 'cyan')}\n"
+            f"{colored(reply_cls.message)}"
         )

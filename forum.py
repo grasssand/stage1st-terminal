@@ -4,8 +4,6 @@
 import re
 import sys
 
-import crayons
-
 from config import (
     FORUM_KEY,
     THREAD_LIST_KEY,
@@ -16,7 +14,7 @@ from config import (
 )
 from stage1st import Stage1stClient
 from thread import Thread
-from util import check_attr
+from util import check_attr, colored
 
 
 class Forum(Stage1stClient):
@@ -42,6 +40,7 @@ class Forum(Stage1stClient):
         self._posts = posts
         self._todayposts = todayposts
         self._cur_page = page
+        self._index = {}
 
     @property
     def fid(self):
@@ -93,6 +92,7 @@ class Forum(Stage1stClient):
             self._get_content()
         threads_list = self.content[self._child]
         for i, thread in enumerate(threads_list):
+            self._index[str(i)] = thread["tid"]
             try:
                 message = thread["reply"][0]["message"]
             except KeyError:
@@ -145,9 +145,9 @@ class Forum(Stage1stClient):
     def termianl(self):
         self.threads
         while True:
-            ipt = input(f"Forum {self.name} p{self._cur_page} $ ")
+            ipt = input(f"{self.name} {self._cur_page}/{self.max_page} $ ")
             if ipt:
-                opt, args = re.match(r"\s*(\w+)\s*(\d*)", ipt).groups()
+                opt, args = re.match(r"\s*([a-z]*)\s*(\d*)", ipt).groups()
                 if opt == "q":
                     break
                 elif opt == "t":
@@ -171,6 +171,11 @@ class Forum(Stage1stClient):
                     sys.exit(0)
                 elif opt == "h" or opt == "help":
                     self.help()
+                elif opt == "" and args:
+                    tid = self._index.get(args)
+                    if tid is not None:
+                        t = self.thread(tid)
+                        t.termianl()
                 else:
                     pass
 
@@ -178,7 +183,7 @@ class Forum(Stage1stClient):
         print(
             """
                 <operate> [args]
-                <t> [Thread ID]     进入相应主题
+                [Thread Index]      进入相应主题
                 <f>                 刷新
                 <n>                 下一页
                 <p>                 上一页
@@ -192,11 +197,11 @@ class Forum(Stage1stClient):
 
     def _info(self, idx, thread_cls):
         return (
-            f"「{crayons.red(idx)}」 {'=' * 50}\n"
-            f"[{crayons.cyan(thread_cls.tid, bold=True)}]\t{crayons.green(thread_cls.dateline)}\t"
-            f"{crayons.yellow(thread_cls.author)} "
-            f"({crayons.blue(thread_cls.replies_count)} / {crayons.magenta(thread_cls.views)})\n"
-            f"{crayons.normal(thread_cls.subject, bold=True)}\n"
+            f"「{colored(idx, 'red', attrs=['bold'])}」 {'=' * 50}\n"
+            f"{colored(thread_cls.dateline, 'green')}\t"
+            f"{colored(thread_cls.author, 'cyan')} "
+            f"({colored(thread_cls.replies_count, 'blue')} / {colored(thread_cls.views, 'magenta')})\n"
+            f"{colored(thread_cls.subject, 'yellow')}\n"
             f"{'-' * 50}\n"
-            f"{crayons.normal(thread_cls.message)}\n"
+            f"{colored(thread_cls.message)}"
         )

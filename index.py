@@ -4,11 +4,10 @@
 import re
 import sys
 
-import crayons
-
 from config import FORUM_LIST_KEY, URL_FORUM_LIST, URL_THREAD_LIST
 from forum import Forum
 from stage1st import Stage1stClient
+from util import colored
 
 
 class Index(Stage1stClient):
@@ -17,6 +16,7 @@ class Index(Stage1stClient):
         self._child = FORUM_LIST_KEY
         self._url = url
         self._cur_page = page
+        self._index = {}
 
     @property
     def cur_page(self):
@@ -31,7 +31,9 @@ class Index(Stage1stClient):
         if self.content is None:
             self._get_content()
         forums_list = self.content[self._child]
+        forums_list = sorted(forums_list, key=lambda x: -int(x["todayposts"]))
         for i, forum in enumerate(forums_list):
+            self._index[str(i)] = forum["fid"]
             f = Forum(
                 forum["fid"],
                 URL_THREAD_LIST.format(forum["fid"], 1),
@@ -41,7 +43,7 @@ class Index(Stage1stClient):
                 forum["posts"],
                 forum["todayposts"],
             )
-            print(self._info(i, f))
+            print(self._info(f, i))
 
     def forum(self, fid):
         return Forum(fid)
@@ -49,7 +51,7 @@ class Index(Stage1stClient):
     def terminal(self):
         self.forums
         while True:
-            ipt = input(f"Index $ ")
+            ipt = input(f"论坛 $ ")
             if ipt:
                 opt, args = re.match(r"\s*([a-z]*)\s*(\d*)", ipt).groups()
                 if opt == "q":
@@ -61,9 +63,11 @@ class Index(Stage1stClient):
                     sys.exit(0)
                 elif opt == "h" or opt == "help":
                     self.help()
-                elif args and not opt:
-                    f = self.forum(args)
-                    f.termianl()
+                elif opt == "" and args:
+                    fid = self._index.get(args)
+                    if fid is not None:
+                        f = self.forum(fid)
+                        f.termianl()
                 else:
                     pass
 
@@ -71,7 +75,7 @@ class Index(Stage1stClient):
         print(
             """
                 <operate> [args]
-                [Forum ID]          进入相应论坛板块
+                [Forum Index]       进入相应论坛板块
                 <f>                 刷新
                 <q>                 离开返回上一级
                 <e>                 退出
@@ -79,11 +83,11 @@ class Index(Stage1stClient):
             """
         )
 
-    def _info(self, idx, forum_cls):
+    def _info(self, forum_cls, idx):
         return (
-            f"[{crayons.cyan(forum_cls.fid)}]\t"
-            f"{forum_cls.name}({crayons.green(forum_cls.todayposts)})\t"
-            f"{crayons.yellow(forum_cls.description)}"
+            f"「{colored(idx, 'red', attrs=['bold'])}」\t"
+            f"{forum_cls.name} ({colored(forum_cls.todayposts, 'green')})\t"
+            f"{colored(forum_cls.description, 'yellow')}\r"
         )
 
 
