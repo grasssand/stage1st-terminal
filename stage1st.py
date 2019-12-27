@@ -79,7 +79,7 @@ class Stage1stClient:
             print("登陆过期")
             self.login_with_password()
         self.content = resp["Variables"]
-        self.formhash = self.content['formhash']
+        self.formhash = self.content["formhash"]
 
     @property
     def url(self):

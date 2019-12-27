@@ -24,14 +24,15 @@ URL_THREAD_LIST = (
     + str(PER_PAGE_THREADS)
     + "&fid={}&page={}"
 )
-URL_THREAD = BASE_API_URL + 'index.php?module=newthread&extra=&topicsubmit=yes&fid={}'
+URL_THREAD = BASE_API_URL + "index.php?module=newthread&extra=&topicsubmit=yes&fid={}"
 URL_REPLY_LIST = (
     BASE_API_URL
     + "index.php?module=viewthread&version=1&ppp="
     + str(PER_PAGE_REPLIES)
     + "&tid={}&page={}"
 )
-URL_REPLY = BASE_API_URL + 'index.php?module=sendreply&replysubmit=yes&tid={}'
+URL_REPLY = BASE_API_URL + "index.php?module=sendreply&replysubmit=yes&tid={}"
+URL_FAVOURITE = BASE_API_URL + "index.php?module=favthread&favoritesubmit=yes"
 
 BROWSER_URL_FORUM = "https://bbs.saraba1st.com/2b/forum-{}-{}.html"
 BROWSER_URL_THREAD = "https://bbs.saraba1st.com/2b/thread-{}-{}-1.html"

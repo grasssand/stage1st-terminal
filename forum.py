@@ -84,7 +84,7 @@ class Forum(Stage1stClient):
     @property
     @check_attr("_thread_types")
     def thread_types(self):
-        return self.content['threadtypes']['types']
+        return self.content["threadtypes"]["types"]
 
     @property
     def todayposts(self):
@@ -149,9 +149,9 @@ class Forum(Stage1stClient):
         default_type_id, default_type_name = next(iter(self.thread_types.items()))
 
         print(self.thread_types)
-        typeid = input(f'选择类别[{default_type_name}]: ')
-        subject = input('主题: ')
-        print('请输入内容，2次Enter发送')
+        typeid = input(f"选择类别[{default_type_id}]: ")
+        subject = input("主题: ")
+        print("-- 请输入内容，2次Enter发送 --")
         lines = []
         enter = 0
         while enter < 2:
@@ -161,7 +161,7 @@ class Forum(Stage1stClient):
             else:
                 enter = 0
             lines.append(line)
-        message = '\n'.join(lines[:-1])
+        message = "\n".join(lines[:-1])
 
         try:
             typeid = int(typeid)
@@ -170,14 +170,14 @@ class Forum(Stage1stClient):
 
         url = URL_THREAD.format(self.fid)
         data = {
-            'formhash': self.formhash,
-            'typeid': typeid,
-            'subject': subject,
-            'message': message,
+            "formhash": self.formhash,
+            "typeid": typeid,
+            "subject": subject,
+            "message": message,
         }
 
         resp = self.post(url=url, data=data)
-        print(resp['Message']['messagestr'])
+        print(resp["Message"]["messagestr"])
 
         self.refresh()
 
@@ -232,6 +232,7 @@ class Forum(Stage1stClient):
             """
                 <operate> [args]
                 [Thread Index]      进入相应主题
+                <r>                 发帖
                 <f>                 刷新
                 <n>                 下一页
                 <p>                 上一页

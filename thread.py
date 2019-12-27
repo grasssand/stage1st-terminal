@@ -9,6 +9,7 @@ from config import (
     THREAD_KEY,
     URL_REPLY_LIST,
     URL_REPLY,
+    URL_FAVOURITE,
     BROWSER_URL_THREAD,
     PER_PAGE_REPLIES,
 )
@@ -188,7 +189,7 @@ class Thread(Stage1stClient):
             self.refresh()
 
     def new_reply(self):
-        print('请输入内容，2次Enter发送')
+        print("-- 请输入内容，2次Enter发送 --")
         lines = []
         enter = 0
         while enter < 2:
@@ -198,18 +199,23 @@ class Thread(Stage1stClient):
             else:
                 enter = 0
             lines.append(line)
-        message = '\n'.join(lines[:-1])
+        message = "\n".join(lines[:-1])
 
-        url = URL_REPLY.format(self.tid)
+        url = URL_REPLY.format(self._tid)
         data = {
-            'formhash': self.formhash,
-            'message': message,
+            "formhash": self.formhash,
+            "message": message,
         }
 
         resp = self.post(url=url, data=data)
-        print(resp['Message']['messagestr'])
+        print(resp["Message"]["messagestr"])
 
         self.refresh()
+
+    def collect(self):
+        data = {"formhash": self.formhash, "id": self._tid, "description": ""}
+        resp = self.post(url=URL_FAVOURITE, data=data)
+        print(resp["Message"]["messagestr"])
 
     def refresh(self):
         super().refresh()
@@ -245,6 +251,8 @@ class Thread(Stage1stClient):
                     print(self.browser_url)
                 elif opt == "r":
                     self.new_reply()
+                elif opt == "c":
+                    self.collect()
                 elif opt == "e":
                     sys.exit(0)
                 elif opt == "h" or opt == "help":
@@ -256,11 +264,13 @@ class Thread(Stage1stClient):
         print(
             """
                 <operate> [args]
+                <r>                 回复
                 <f>                 刷新
                 <n>                 下一页
                 <p>                 上一页
                 <j> [page]          跳转到
                 <a>                 显示网页地址
+                <c>                 收藏
                 <q>                 离开返回上一级
                 <e>                 退出
                 <h>                 显示帮助信息
