@@ -43,7 +43,7 @@ class Index(Stage1stClient):
                 forum["posts"],
                 forum["todayposts"],
             )
-            print(self._info(f, i))
+            print(self._info(i, f))
 
     def forum(self, fid):
         return Forum(fid)
@@ -83,7 +83,7 @@ class Index(Stage1stClient):
             """
         )
 
-    def _info(self, forum_cls, idx):
+    def _info(self, idx, forum_cls):
         return (
             f"「{colored(idx, 'red', attrs=['bold'])}」\t"
             f"{forum_cls.name} ({colored(forum_cls.todayposts, 'green')})\t"

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-COOKIES_FILE = "cookies.json"
+PER_PAGE_THREADS = 20
+PER_PAGE_REPLIES = 20
 
+COOKIES_FILE = "cookies.json"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0"
 }
-PER_PAGE_THREADS = 10
-PER_PAGE_REPLIES = 10
+
 BASE_HOST = "bbs.saraba1st.com"
 BASE_URL = "https://" + BASE_HOST + "/2b/"
 BASE_API_URL = BASE_URL + "api/mobile/"
@@ -23,12 +24,14 @@ URL_THREAD_LIST = (
     + str(PER_PAGE_THREADS)
     + "&fid={}&page={}"
 )
+URL_THREAD = BASE_API_URL + 'index.php?module=newthread&extra=&topicsubmit=yes&fid={}'
 URL_REPLY_LIST = (
     BASE_API_URL
     + "index.php?module=viewthread&version=1&ppp="
     + str(PER_PAGE_REPLIES)
     + "&tid={}&page={}"
 )
+URL_REPLY = BASE_API_URL + 'index.php?module=sendreply&replysubmit=yes&tid={}'
 
 BROWSER_URL_FORUM = "https://bbs.saraba1st.com/2b/forum-{}-{}.html"
 BROWSER_URL_THREAD = "https://bbs.saraba1st.com/2b/thread-{}-{}-1.html"

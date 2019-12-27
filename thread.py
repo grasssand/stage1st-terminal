@@ -8,6 +8,7 @@ from config import (
     REPLY_LIST_KEY,
     THREAD_KEY,
     URL_REPLY_LIST,
+    URL_REPLY,
     BROWSER_URL_THREAD,
     PER_PAGE_REPLIES,
 )
@@ -186,6 +187,30 @@ class Thread(Stage1stClient):
             self._cur_page = min(page, self.max_page)
             self.refresh()
 
+    def new_reply(self):
+        print('请输入内容，2次Enter发送')
+        lines = []
+        enter = 0
+        while enter < 2:
+            line = input()
+            if not line:
+                enter += 1
+            else:
+                enter = 0
+            lines.append(line)
+        message = '\n'.join(lines[:-1])
+
+        url = URL_REPLY.format(self.tid)
+        data = {
+            'formhash': self.formhash,
+            'message': message,
+        }
+
+        resp = self.post(url=url, data=data)
+        print(resp['Message']['messagestr'])
+
+        self.refresh()
+
     def refresh(self):
         super().refresh()
         self._fid = None
@@ -218,6 +243,8 @@ class Thread(Stage1stClient):
                     self.replies
                 elif opt == "a":
                     print(self.browser_url)
+                elif opt == "r":
+                    self.new_reply()
                 elif opt == "e":
                     sys.exit(0)
                 elif opt == "h" or opt == "help":
@@ -242,7 +269,7 @@ class Thread(Stage1stClient):
 
     def _info(self, idx, reply_cls):
         return (
-            f"「{colored(idx, 'red')}」 {colored('=' * 50, 'yellow')}\n"
+            f"「{colored(idx, 'red', attrs=['bold'])}」 {colored('=' * 50, 'yellow')}\n"
             f"{colored(reply_cls.dateline, 'green')}\t"
             f"{colored(reply_cls.author, 'cyan')}\n"
             f"{colored(reply_cls.message)}"

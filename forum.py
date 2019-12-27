@@ -9,6 +9,7 @@ from config import (
     THREAD_LIST_KEY,
     URL_REPLY_LIST,
     URL_THREAD_LIST,
+    URL_THREAD,
     PER_PAGE_THREADS,
     BROWSER_URL_FORUM,
 )
@@ -27,6 +28,7 @@ class Forum(Stage1stClient):
         threads_count=None,
         posts=None,
         todayposts=None,
+        thread_types=None,
         page=1,
     ):
         super().__init__()
@@ -39,6 +41,7 @@ class Forum(Stage1stClient):
         self._threads_count = threads_count
         self._posts = posts
         self._todayposts = todayposts
+        self._thread_types = thread_types
         self._cur_page = page
         self._index = {}
 
@@ -79,6 +82,11 @@ class Forum(Stage1stClient):
         return self.content[self._key]["posts"]
 
     @property
+    @check_attr("_thread_types")
+    def thread_types(self):
+        return self.content['threadtypes']['types']
+
+    @property
     def todayposts(self):
         return self._todayposts
 
@@ -88,6 +96,8 @@ class Forum(Stage1stClient):
 
     @property
     def threads(self):
+        print(f"{colored('*' * 80, 'yellow', attrs=['bold'])}\n")
+
         if self.content is None:
             self._get_content()
         threads_list = self.content[self._child]
@@ -135,6 +145,42 @@ class Forum(Stage1stClient):
             self._cur_page = min(page, self.max_page)
             self.refresh()
 
+    def new_thread(self):
+        default_type_id, default_type_name = next(iter(self.thread_types.items()))
+
+        print(self.thread_types)
+        typeid = input(f'选择类别[{default_type_name}]: ')
+        subject = input('主题: ')
+        print('请输入内容，2次Enter发送')
+        lines = []
+        enter = 0
+        while enter < 2:
+            line = input()
+            if not line:
+                enter += 1
+            else:
+                enter = 0
+            lines.append(line)
+        message = '\n'.join(lines[:-1])
+
+        try:
+            typeid = int(typeid)
+        except:
+            typeid = int(default_type_id)
+
+        url = URL_THREAD.format(self.fid)
+        data = {
+            'formhash': self.formhash,
+            'typeid': typeid,
+            'subject': subject,
+            'message': message,
+        }
+
+        resp = self.post(url=url, data=data)
+        print(resp['Message']['messagestr'])
+
+        self.refresh()
+
     def refresh(self):
         super().refresh()
         self._name = None
@@ -167,6 +213,8 @@ class Forum(Stage1stClient):
                     self.threads
                 elif opt == "a":
                     print(self.browser_url)
+                elif opt == "r":
+                    self.new_thread()
                 elif opt == "e":
                     sys.exit(0)
                 elif opt == "h" or opt == "help":
@@ -203,5 +251,5 @@ class Forum(Stage1stClient):
             f"({colored(thread_cls.replies_count, 'blue')} / {colored(thread_cls.views, 'magenta')})\n"
             f"{colored(thread_cls.subject, 'yellow')}\n"
             f"{'-' * 50}\n"
-            f"{colored(thread_cls.message)}"
+            f"{colored(thread_cls.message)}\n"
         )

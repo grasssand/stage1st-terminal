@@ -14,11 +14,12 @@ from exception import LoginError, ResourceError
 
 
 class Stage1stClient:
-    def __init__(self, cookies=None):
+    def __init__(self):
         self._session = HTMLSession()
         self._session.headers.update(HEADERS)
         self._url = None
         self.content = None
+        self.formhash = None
 
         if os.path.isfile(COOKIES_FILE):
             self.login_with_cookies(COOKIES_FILE)
@@ -62,6 +63,14 @@ class Stage1stClient:
             with open(COOKIES_FILE, "w") as f:
                 f.write(cookies)
 
+    def get(self, url, **kwargs):
+        resp = self._session.get(url, **kwargs)
+        return resp.json()
+
+    def post(self, url, data, **kwargs):
+        resp = self._session.post(url, data, **kwargs)
+        return resp.json()
+
     def _get_content(self):
         url = self._url if getattr(self, "_url") else self.url
         resp = self._session.get(url)
@@ -70,6 +79,7 @@ class Stage1stClient:
             print("登陆过期")
             self.login_with_password()
         self.content = resp["Variables"]
+        self.formhash = self.content['formhash']
 
     @property
     def url(self):
