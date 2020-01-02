@@ -12,163 +12,145 @@ from config import (
     URL_THREAD,
     PER_PAGE_THREADS,
     BROWSER_URL_FORUM,
+    RE_OPT,
 )
 from stage1st import Stage1stClient
 from thread import Thread
-from util import check_attr, colored
+from util import check_attr, colored, cprint
 
 
 class Forum(Stage1stClient):
     def __init__(
         self,
         fid,
-        url=None,
+        page=1,
         name=None,
         description=None,
         threads_count=None,
         posts=None,
         todayposts=None,
-        thread_types=None,
-        page=1,
     ):
-        super().__init__()
-        self._key = FORUM_KEY
-        self._child = THREAD_LIST_KEY
-        self._fid = fid
-        self._url = url
+        super().__init__(fid, page)
         self._name = name
         self._description = description
         self._threads_count = threads_count
         self._posts = posts
-        self._todayposts = todayposts
-        self._thread_types = thread_types
-        self._cur_page = page
-        self._index = {}
+        self.todayposts = todayposts if todayposts else 0
+        self.data = {}
 
-    @property
-    def fid(self):
-        return self._fid
+    def __str__(self):
+        return (
+            f"{self.name} ({colored(self.todayposts, 'green')})\t"
+            f"{colored(self.description, 'yellow')}\r"
+        )
 
-    @property
-    def cur_page(self):
-        return self._cur_page
+    def _build_url(self):
+        return URL_THREAD_LIST.format(self.id, self._page)
 
-    @property
-    def url(self):
-        return self._url or URL_THREAD_LIST.format(self._fid, self._cur_page)
-
-    @property
-    def browser_url(self):
-        return BROWSER_URL_FORUM.format(self._fid, self._cur_page)
+    def refresh(self):
+        super().refresh()
+        self._name = None
+        self._description = None
+        self._threads_count = None
+        self._posts = None
+        self.data = {}
+        self.threads()
 
     @property
     @check_attr("_name")
     def name(self):
-        return self.content[self._key]["name"]
+        return self.content[FORUM_KEY]["name"]
 
     @property
     @check_attr("_description")
     def description(self):
-        return self.content[self._key].get("description", "")
+        return self.content[FORUM_KEY].get("description", "")
 
     @property
     @check_attr("_threads_count")
     def threads_count(self):
-        return int(self.content[self._key]["threads"])
+        return int(self.content[FORUM_KEY]["threads"])
 
     @property
     @check_attr("_posts")
     def posts(self):
-        return self.content[self._key]["posts"]
-
-    @property
-    @check_attr("_thread_types")
-    def thread_types(self):
-        return self.content["threadtypes"]["types"]
-
-    @property
-    def todayposts(self):
-        return self._todayposts
+        return self.content[FORUM_KEY]["posts"]
 
     @property
     def max_page(self):
         return self.threads_count // PER_PAGE_THREADS + 1
 
-    @property
-    def threads(self):
-        print(f"{colored('*' * 80, 'yellow', attrs=['bold'])}\n")
+    def threads_list(self):
+        return self.content.get(THREAD_LIST_KEY, [])
 
-        if self.content is None:
-            self._get_content()
-        threads_list = self.content[self._child]
+    def thread_types(self):
+        return self.content["threadtypes"]["types"]
+
+    def browser_url(self):
+        return BROWSER_URL_FORUM.format(self.id, self.page)
+
+    def threads(self):
+        cprint(
+            f"\n{'* ' * 20} {self.name} {self.page} {' *' * 20}\n",
+            "yellow",
+            attrs=["bold"],
+        )
+        threads_list = self.threads_list()
         for i, thread in enumerate(threads_list):
-            self._index[str(i)] = thread["tid"]
+            self.data[str(i)] = thread["tid"]
             try:
                 message = thread["reply"][0]["message"]
             except KeyError:
                 message = ""
-            t = Thread(
+            tobj = Thread(
                 thread["tid"],
-                URL_REPLY_LIST.format(thread["tid"], 1),
-                self._fid,
-                thread["author"],
-                thread["authorid"],
-                thread["subject"],
-                thread["dateline"],
-                thread["lastpost"],
-                thread["lastposter"],
-                thread["views"],
-                thread["replies"],
-                message,
+                author=thread["author"],
+                subject=thread["subject"],
+                dateline=thread["dateline"],
+                views=thread["views"],
+                replies_count=thread["replies"],
+                message=message,
+                fid=self.id,
             )
-            print(self._info(i, t))
-
-    def thread(self, tid):
-        return Thread(tid)
+            print(f"「{colored(i, 'red', attrs=['bold'])}」 {'=' * 50}\n{tobj}")
 
     def next_page(self):
-        if self._cur_page < self.max_page:
-            self._cur_page += 1
-            self.refresh()
+        if self.page < self.max_page:
+            self.page += 1
+            self.threads()
 
     def prev_page(self):
-        if self._cur_page > 1:
-            self._cur_page -= 1
-            self.refresh()
+        if self.page > 1:
+            self.page -= 1
+            self.threads()
 
     def jump_to(self, page):
-        try:
-            page = int(page)
-        except ValueError:
-            page = -1
-        if page > 0:
-            self._cur_page = min(page, self.max_page)
-            self.refresh()
+        if page > 0 and page != self.page:
+            self.page = min(page, self.max_page)
+            self.threads()
 
     def new_thread(self):
-        default_type_id, default_type_name = next(iter(self.thread_types.items()))
+        thread_types = self.thread_types()
+        default_type_id, default_type_name = next(iter(thread_types.items()))
 
-        print(self.thread_types)
+        print(self.thread_types())
         typeid = input(f"选择类别[{default_type_id}]: ")
         subject = input("主题: ")
         print("-- 请输入内容，2次Enter发送 --")
         lines = []
-        enter = 0
-        while enter < 2:
+        while True:
             line = input()
             if not line:
-                enter += 1
-            else:
-                enter = 0
+                break
             lines.append(line)
-        message = "\n".join(lines[:-1])
+        message = "\n".join(lines)
 
         try:
             typeid = int(typeid)
-        except:
+        except ValueError:
             typeid = int(default_type_id)
 
-        url = URL_THREAD.format(self.fid)
+        url = URL_THREAD.format(self.id)
         data = {
             "formhash": self.formhash,
             "typeid": typeid,
@@ -181,76 +163,51 @@ class Forum(Stage1stClient):
 
         self.refresh()
 
-    def refresh(self):
-        super().refresh()
-        self._name = None
-        self._description = None
-        self._threads = None
-        self._posts = None
-
     def termianl(self):
-        self.threads
+        self.threads()
         while True:
-            ipt = input(f"{self.name} {self._cur_page}/{self.max_page} $ ")
+            ipt = input(f"{self.name} {self.page}/{self.max_page} $ ")
             if ipt:
-                opt, args = re.match(r"\s*([a-z]*)\s*(\d*)", ipt).groups()
+                opt, args = RE_OPT.match(ipt).groups()
+
                 if opt == "q":
                     break
-                elif opt == "t":
-                    t = self.thread(args)
-                    t.termianl()
-                elif opt == "n":
-                    self.next_page()
-                    self.threads
-                elif opt == "p":
-                    self.prev_page()
-                    self.threads
-                elif opt == "j":
-                    self.jump_to(args)
-                    self.threads
                 elif opt == "f":
                     self.refresh()
-                    self.threads
-                elif opt == "a":
-                    print(self.browser_url)
-                elif opt == "r":
-                    self.new_thread()
-                elif opt == "e":
+                elif opt == "e" or opt == "exit":
                     sys.exit(0)
                 elif opt == "h" or opt == "help":
                     self.help()
+                elif opt == "n":
+                    self.next_page()
+                elif opt == "p":
+                    self.prev_page()
+                elif opt == "j":
+                    if args:
+                        self.jump_to(int(args))
+                elif opt == "a":
+                    print(self.browser_url())
+                elif opt == "r":
+                    self.new_thread()
                 elif opt == "" and args:
-                    tid = self._index.get(args)
-                    if tid is not None:
-                        t = self.thread(tid)
+                    tid = self.data.get(args)
+                    if tid:
+                        t = Thread(tid)
                         t.termianl()
-                else:
-                    pass
 
     def help(self):
         print(
             """
                 <operate> [args]
+                <e>                 退出
+                <q>                 返回上一级
+                <h>                 帮助信息
+                <f>                 刷新
                 [Thread Index]      进入相应主题
                 <r>                 发帖
-                <f>                 刷新
                 <n>                 下一页
                 <p>                 上一页
                 <j> [page]          跳转到
                 <a>                 显示网页地址
-                <q>                 离开返回上一级
-                <e>                 退出
-                <h>                 显示帮助信息
             """
-        )
-
-    def _info(self, idx, thread_cls):
-        return (
-            f"「{colored(idx, 'red', attrs=['bold'])}」 {'=' * 50}\n"
-            f"{colored(thread_cls.dateline, 'green')}\t"
-            f"{colored(thread_cls.author, 'cyan')} "
-            f"({colored(thread_cls.replies_count, 'blue')} / {colored(thread_cls.views, 'magenta')})\n"
-            f"{colored(thread_cls.subject, 'yellow')}\n"
-            f"{'-' * 50}\n"
-            f"{colored(thread_cls.message)}\n"
         )

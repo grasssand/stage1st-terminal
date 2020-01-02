@@ -60,8 +60,6 @@ def check_attr(attr):
         def wrapper(self):
             value = getattr(self, attr, None)
             if value is None:
-                if self.content is None:
-                    self._get_content()
                 value = func(self)
                 setattr(self, attr, value)
             return value

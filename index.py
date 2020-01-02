@@ -4,90 +4,69 @@
 import re
 import sys
 
-from config import FORUM_LIST_KEY, URL_FORUM_LIST, URL_THREAD_LIST
+from config import FORUM_LIST_KEY, URL_FORUM_LIST, URL_THREAD_LIST, RE_OPT
 from forum import Forum
 from stage1st import Stage1stClient
 from util import colored
 
 
 class Index(Stage1stClient):
-    def __init__(self, url=None, page=1):
-        super().__init__()
-        self._child = FORUM_LIST_KEY
-        self._url = url
-        self._cur_page = page
-        self._index = {}
+    def __init__(self, sid=0, page=1):
+        super().__init__(sid, page)
+        self.data = {}
 
-    @property
-    def cur_page(self):
-        return self._cur_page
+    def _build_url(self):
+        return URL_FORUM_LIST
 
-    @property
-    def url(self):
-        return self._url or URL_FORUM_LIST
+    def forums_list(self):
+        return self.content.get(FORUM_LIST_KEY, [])
 
-    @property
     def forums(self):
-        if self.content is None:
-            self._get_content()
-        forums_list = self.content[self._child]
-        forums_list = sorted(forums_list, key=lambda x: -int(x["todayposts"]))
+        forums_list = sorted(self.forums_list(), key=lambda x: -int(x["todayposts"]))
         for i, forum in enumerate(forums_list):
-            self._index[str(i)] = forum["fid"]
-            f = Forum(
+            self.data[str(i)] = forum["fid"]
+            fobj = Forum(
                 forum["fid"],
-                URL_THREAD_LIST.format(forum["fid"], 1),
-                forum["name"],
-                forum.get("description", ""),
-                forum["threads"],
-                forum["posts"],
-                forum["todayposts"],
+                name=forum["name"],
+                description=forum.get("description", ""),
+                threads_count=forum["threads"],
+                posts=forum["posts"],
+                todayposts=forum["todayposts"],
             )
-            print(self._info(i, f))
-
-    def forum(self, fid):
-        return Forum(fid)
+            print(f"「{colored(i, 'red', attrs=['bold'])}」\t{fobj}")
 
     def terminal(self):
-        self.forums
+        self.forums()
         while True:
-            ipt = input(f"论坛 $ ")
+            ipt = input("论坛 $ ")
             if ipt:
-                opt, args = re.match(r"\s*([a-z]*)\s*(\d*)", ipt).groups()
+                opt, args = RE_OPT.match(ipt).groups()
                 if opt == "q":
                     break
                 elif opt == "f":
                     self.refresh()
-                    self.forums
-                elif opt == "e":
+                    self.forums()
+                elif opt == "e" or opt == "exit":
                     sys.exit(0)
                 elif opt == "h" or opt == "help":
                     self.help()
                 elif opt == "" and args:
-                    fid = self._index.get(args)
-                    if fid is not None:
-                        f = self.forum(fid)
+                    fid = self.data.get(args)
+                    if fid:
+                        f = Forum(fid)
                         f.termianl()
-                else:
-                    pass
 
     def help(self):
         print(
             """
                 <operate> [args]
-                [Forum Index]       进入相应论坛板块
-                <f>                 刷新
-                <q>                 离开返回上一级
+                <q>                 返回上一级
                 <e>                 退出
-                <h>                 显示帮助信息
+                <h>                 帮助信息
+                <f>                 刷新
+                [Forum Index]       进入相应论坛
+                <s>                 搜索
             """
-        )
-
-    def _info(self, idx, forum_cls):
-        return (
-            f"「{colored(idx, 'red', attrs=['bold'])}」\t"
-            f"{forum_cls.name} ({colored(forum_cls.todayposts, 'green')})\t"
-            f"{colored(forum_cls.description, 'yellow')}\r"
         )
 
 

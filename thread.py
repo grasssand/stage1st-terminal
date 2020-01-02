@@ -12,6 +12,7 @@ from config import (
     URL_FAVOURITE,
     BROWSER_URL_THREAD,
     PER_PAGE_REPLIES,
+    RE_OPT,
 )
 from reply import Reply
 from stage1st import Stage1stClient
@@ -22,103 +23,80 @@ class Thread(Stage1stClient):
     def __init__(
         self,
         tid,
-        url=None,
-        fid=None,
+        page=1,
         author=None,
-        authorid=None,
         subject=None,
         dateline=None,
-        lastpost=None,
-        lastposter=None,
         views=None,
         replies_count=None,
         message=None,
-        page=1,
+        fid=None,
     ):
-        super().__init__()
-        self._key = THREAD_KEY
-        self._child = REPLY_LIST_KEY
-        self._tid = tid
-        self._url = url
-        self._fid = fid
+        super().__init__(tid, page)
         self._author = author
-        self._authorid = authorid
         self._subject = subject
         self._dateline = dateline
-        self._lastpost = lastpost
-        self._lastposter = lastposter
         self._views = views
         self._replies_count = replies_count
         self._message = message
-        self._cur_page = page
-        self._index = {}
+        self.fid = fid
+        self.data = {}
 
-    @property
-    def tid(self):
-        return self._tid
+    def __str__(self):
+        return (
+            f"{colored(self.dateline, 'green')}\t"
+            f"{colored(self.author, 'cyan')} "
+            f"({colored(self.replies_count, 'blue')} / {colored(self.views, 'magenta')})\n"
+            f"{colored(self.subject, 'yellow')}\n"
+            f"{'-' * 50}\n"
+            f"{colored(self.message)}\n"
+        )
 
-    @property
-    def cur_page(self):
-        return self._cur_page
+    def _build_url(self):
+        return URL_REPLY_LIST.format(self.id, self.page)
 
-    @property
-    def url(self):
-        return self._url or URL_REPLY_LIST.format(self._tid, self._cur_page)
-
-    @property
-    def browser_url(self):
-        return BROWSER_URL_THREAD.format(self._tid, self._cur_page)
-
-    @property
-    @check_attr("_fid")
-    def fid(self):
-        return self.content[self._key]["fid"]
+    def refresh(self):
+        super().refresh()
+        self._author = None
+        self._subject = None
+        self._dateline = None
+        self._views = None
+        self._replies_count = None
+        self._message = None
+        self.data = {}
+        self.replies()
 
     @property
     @check_attr("_author")
     def author(self):
-        return self.content[self._key]["author"]
-
-    @property
-    @check_attr("_authorid")
-    def authorid(self):
-        return self.content[self._key]["authorid"]
+        return self.content[THREAD_KEY]["author"]
 
     @property
     @check_attr("_subject")
     def subject(self):
-        return self.content[self._key]["subject"]
+        return self.content[THREAD_KEY]["subject"]
 
     @property
     @check_attr("_dateline")
     def dateline(self):
-        return self.content[self._key]["dateline"]
-
-    @property
-    @check_attr("_lastpost")
-    def lastpost(self):
-        return self.content[self._key]["lastpost"]
-
-    @property
-    @check_attr("_lastposter")
-    def lastposter(self):
-        return self.content[self._key]["lastposter"]
+        return self.content[THREAD_KEY]["dateline"]
 
     @property
     @check_attr("_views")
     def views(self):
-        return self.content[self._key]["views"]
+        return self.content[THREAD_KEY]["views"]
 
     @property
     @check_attr("_replies_count")
     def replies_count(self):
-        return int(self.content[self._key]["replies"])
+        return int(self.content[THREAD_KEY]["replies"])
 
     @property
     @check_attr("_message")
     def message(self):
+        replies_list = self.replies_list()
         try:
-            message = self.content[self._child]["postlist"][0]["message"]
+            message = replies_list["postlist"][0]["message"]
         except KeyError:
             message = ""
         return message
@@ -127,81 +105,56 @@ class Thread(Stage1stClient):
     def max_page(self):
         return self.replies_count // PER_PAGE_REPLIES + 1
 
-    @property
-    def replies(self):
-        if self.content is None:
-            self._get_content()
-        replies_list = self.content[self._child]
-        cprint(f"\n{'* ' * 5} {self.subject} {' *' * 5}\n", "yellow", attrs=["bold"])
-        for i, reply in enumerate(replies_list):
-            self._index[str(i)] = reply["pid"]
-            r = Reply(
-                reply["pid"],
-                reply["tid"],
-                reply["author"],
-                reply["authorid"],
-                reply["dateline"],
-                reply["message"],
-                self.subject,
-            )
-            print(self._info(i, r))
+    def replies_list(self):
+        return self.content[REPLY_LIST_KEY]
 
-    @property
-    def all_replies(self):
-        max_page = self.max_page
-        for p in range(1, max_page + 1):
-            if p == self._cur_page:
-                content = self.content
-            else:
-                url = URL_REPLY_LIST.format(self._tid, p)
-                resp = self._session.get(url)
-                resp = resp.json()
-                content = resp["Variables"]
-            replies_list = content[self._child]
-            for reply in replies_list:
-                yield Reply(
-                    reply["pid"],
-                    reply["tid"],
-                    reply["author"],
-                    reply["authorid"],
-                    reply["dateline"],
-                    reply["message"],
-                    self.subject,
-                )
+    def browser_url(self):
+        return BROWSER_URL_THREAD.format(self.id, self.page)
+
+    def replies(self):
+        cprint(f"\n{'* ' * 5} {self.subject} {' *' * 5}\n", "yellow", attrs=["bold"])
+        replies_list = self.replies_list()
+        for i, reply in enumerate(replies_list):
+            self.data[str(i)] = reply["pid"]
+            robj = Reply(
+                author=reply["author"],
+                dateline=reply["dateline"],
+                message=reply["message"],
+                pid=reply["pid"],
+                tid=self.id,
+                subject=self.subject,
+                fid=self.fid,
+            )
+            print(
+                f"「{colored(i, 'red', attrs=['bold'])}」 {colored('=' * 50, 'yellow')}\n{robj}"
+            )
 
     def next_page(self):
-        if self._cur_page < self.max_page:
-            self._cur_page += 1
-            self.refresh()
+        if self.page < self.max_page:
+            self.page += 1
+            self.replies()
 
     def prev_page(self):
-        if self._cur_page > 1:
-            self._cur_page -= 1
-            self.refresh()
+        if self.page > 1:
+            self.page -= 1
+            self.replies()
 
     def jump_to(self, page):
-        try:
-            page = int(page)
-        except ValueError:
-            page = -1
-        if page > 0:
-            self._cur_page = min(page, self.max_page)
-            self.refresh()
+        if page > 0 and page != self.page:
+            self.page = min(page, self.max_page)
+            self.replies()
 
     def new_reply(self):
         print("-- 请输入内容，2次Enter发送 --")
         lines = []
-        enter = 0
-        while enter < 2:
+        while True:
             line = input()
             if not line:
-                enter += 1
-            else:
-                enter = 0
+                break
             lines.append(line)
-        message = "\n".join(lines[:-1])
+        message = "\n".join(lines)
 
-        url = URL_REPLY.format(self._tid)
+        url = URL_REPLY.format(self.id)
         data = {
             "formhash": self.formhash,
             "message": message,
@@ -213,74 +166,53 @@ class Thread(Stage1stClient):
         self.refresh()
 
     def collect(self):
-        data = {"formhash": self.formhash, "id": self._tid, "description": ""}
-        resp = self.post(url=URL_FAVOURITE, data=data)
+        url = URL_FAVOURITE
+        data = {"formhash": self.formhash, "id": self.id, "description": ""}
+        resp = self.post(url=url, data=data)
         print(resp["Message"]["messagestr"])
 
-    def refresh(self):
-        super().refresh()
-        self._fid = None
-        self._subject = None
-        self._dateline = None
-        self._lastpost = None
-        self._lastposter = None
-        self._views = None
-        self._replies_count = None
-
     def termianl(self):
-        self.replies
+        self.replies()
         while True:
-            ipt = input(f"Thread {self._tid} {self._cur_page}/{self.max_page} $ ")
+            ipt = input(f"Thread {self.id} {self.page}/{self.max_page} $ ")
             if ipt:
-                opt, args = re.match(r"\s*([a-z]*)\s*(\d*)", ipt).groups()
+                opt, args = RE_OPT.match(ipt).groups()
+
                 if opt == "q":
                     break
-                elif opt == "n":
-                    self.next_page()
-                    self.replies
-                elif opt == "p":
-                    self.prev_page()
-                    self.replies
-                elif opt == "j":
-                    self.jump_to(args)
-                    self.replies
                 elif opt == "f":
                     self.refresh()
-                    self.replies
+                elif opt == "e" or opt == "exit":
+                    sys.exit(0)
+                elif opt == "h" or opt == "help":
+                    self.help()
+                elif opt == "n":
+                    self.next_page()
+                elif opt == "p":
+                    self.prev_page()
+                elif opt == "j":
+                    if args:
+                        self.jump_to(int(args))
                 elif opt == "a":
-                    print(self.browser_url)
+                    print(self.browser_url())
                 elif opt == "r":
                     self.new_reply()
                 elif opt == "c":
                     self.collect()
-                elif opt == "e":
-                    sys.exit(0)
-                elif opt == "h" or opt == "help":
-                    self.help()
-                else:
-                    pass
 
     def help(self):
         print(
             """
                 <operate> [args]
-                <r>                 回复
+                <e>                 退出
+                <q>                 返回上一级
+                <h>                 帮助信息
                 <f>                 刷新
+                <r>                 回复
+                <c>                 收藏
                 <n>                 下一页
                 <p>                 上一页
                 <j> [page]          跳转到
                 <a>                 显示网页地址
-                <c>                 收藏
-                <q>                 离开返回上一级
-                <e>                 退出
-                <h>                 显示帮助信息
             """
-        )
-
-    def _info(self, idx, reply_cls):
-        return (
-            f"「{colored(idx, 'red', attrs=['bold'])}」 {colored('=' * 50, 'yellow')}\n"
-            f"{colored(reply_cls.dateline, 'green')}\t"
-            f"{colored(reply_cls.author, 'cyan')}\n"
-            f"{colored(reply_cls.message)}"
         )

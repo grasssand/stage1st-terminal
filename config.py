@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-PER_PAGE_THREADS = 20
-PER_PAGE_REPLIES = 20
+import re
+
+PER_PAGE_THREADS = 10
+PER_PAGE_REPLIES = 10
 
 COOKIES_FILE = "cookies.json"
 HEADERS = {
@@ -33,6 +35,7 @@ URL_REPLY_LIST = (
 )
 URL_REPLY = BASE_API_URL + "index.php?module=sendreply&replysubmit=yes&tid={}"
 URL_FAVOURITE = BASE_API_URL + "index.php?module=favthread&favoritesubmit=yes"
+URL_SEARCH = BASE_URL + "search.php?searchsubmit=yes&mod={}"
 
 BROWSER_URL_FORUM = "https://bbs.saraba1st.com/2b/forum-{}-{}.html"
 BROWSER_URL_THREAD = "https://bbs.saraba1st.com/2b/thread-{}-{}-1.html"
@@ -42,3 +45,5 @@ FORUM_KEY = "forum"
 THREAD_LIST_KEY = "forum_threadlist"
 THREAD_KEY = "thread"
 REPLY_LIST_KEY = "postlist"
+
+RE_OPT = re.compile(r"\s*([a-z]*)\s*(\d*)")

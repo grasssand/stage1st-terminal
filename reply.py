@@ -4,52 +4,46 @@
 from requests_html import HTML
 
 from stage1st import Stage1stClient
+from util import colored
 
 
 class Reply(Stage1stClient):
     def __init__(
         self,
-        pid=None,
-        tid=None,
+        sid=0,
+        page=1,
         author=None,
-        authorid=None,
         dateline=None,
         message=None,
+        pid=None,
+        tid=None,
         subject=None,
+        fid=None,
     ):
-        self._pid = pid
-        self._tid = tid
-        self._author = author
-        self._authorid = authorid
-        self._dateline = dateline
-        self._message = "<div>" + message + "</div>"
-        self._subject = subject
+        super().__init__(sid, page)
+        self.author = author
+        self.dateline = dateline
+        self.message = message
+        self.pid = pid
+        self.tid = tid
+        self.subject = subject
+        self.fid = fid
 
-    @property
-    def pid(self):
-        return self._pid
-
-    @property
-    def tid(self):
-        return self._tid
-
-    @property
-    def author(self):
-        return self._author
-
-    @property
-    def authorid(self):
-        return self._authorid
-
-    @property
-    def dateline(self):
-        return self._dateline
+    def __str__(self):
+        return (
+            f"{colored(self.dateline, 'green')}\t"
+            f"{colored(self.author, 'cyan')}\n"
+            f"{self.message}"
+        )
 
     @property
     def message(self):
-        html = HTML(html=self._message)
-        return html.text
+        return self._message
 
-    @property
-    def subject(self):
-        return self._subject
+    @message.setter
+    def message(self, message):
+        message = message.replace('<div class="quote"><blockquote>', "“").replace(
+            "</blockquote></div>", "<br/>”"
+        )
+        html = HTML(html=f"<div>{message}</div>")
+        self._message = html.text
