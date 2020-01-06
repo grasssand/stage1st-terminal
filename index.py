@@ -23,7 +23,7 @@ class Index(Stage1stClient):
 
     def forums(self):
         forums_list = sorted(self.forums_list(), key=lambda x: -int(x["todayposts"]))
-        for i, forum in enumerate(forums_list):
+        for i, forum in enumerate(forums_list, start=1):
             self.data[str(i)] = forum["fid"]
             fobj = Forum(
                 forum["fid"],

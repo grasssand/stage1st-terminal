@@ -19,6 +19,8 @@ class Stage1stClient:
         self._id = sid
         self._page = page
         self._content = None
+        self._uid = None
+        self._formhash = None
 
         self._session = HTMLSession()
         self._session.headers.update(HEADERS)
@@ -86,8 +88,16 @@ class Stage1stClient:
         return self._content
 
     @property
+    def uid(self):
+        if self._uid is None:
+            self._uid = self.content["member_uid"]
+        return self._uid
+
+    @property
     def formhash(self):
-        return self.content["formhash"]
+        if self._formhash is None:
+            self._formhash = self.content["formhash"]
+        return self._formhash
 
     def _get_content(self):
         url = self._build_url()

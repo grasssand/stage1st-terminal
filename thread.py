@@ -64,6 +64,7 @@ class Thread(Stage1stClient):
         self._replies_count = None
         self._message = None
         self.data = {}
+
         self.replies()
 
     @property
@@ -106,16 +107,23 @@ class Thread(Stage1stClient):
         return self.replies_count // PER_PAGE_REPLIES + 1
 
     def replies_list(self):
-        return self.content[REPLY_LIST_KEY]
+        return self.content.get(REPLY_LIST_KEY)
 
     def browser_url(self):
         return BROWSER_URL_THREAD.format(self.id, self.page)
 
     def replies(self):
-        cprint(f"\n{'* ' * 5} {self.subject} {' *' * 5}\n", "yellow", attrs=["bold"])
+        cprint(
+            f"\n{'* ' * 10} {self.subject} {self.page} {' *' * 10}\n",
+            "yellow",
+            attrs=["bold"],
+        )
+
         replies_list = self.replies_list()
-        for i, reply in enumerate(replies_list):
-            self.data[str(i)] = reply["pid"]
+        while replies_list:
+            i = str(len(replies_list))
+            reply = replies_list.pop()
+            self.data[i] = reply["pid"]
             robj = Reply(
                 author=reply["author"],
                 dateline=reply["dateline"],
@@ -129,20 +137,23 @@ class Thread(Stage1stClient):
                 f"「{colored(i, 'red', attrs=['bold'])}」 {colored('=' * 50, 'yellow')}\n{robj}"
             )
 
+        cprint(
+            f"\n{'* ' * 10} {self.subject} {self.page} {' *' * 10}\n",
+            "yellow",
+            attrs=["bold"],
+        )
+
     def next_page(self):
         if self.page < self.max_page:
             self.page += 1
-            self.replies()
 
     def prev_page(self):
         if self.page > 1:
             self.page -= 1
-            self.replies()
 
     def jump_to(self, page):
         if page > 0 and page != self.page:
             self.page = min(page, self.max_page)
-            self.replies()
 
     def new_reply(self):
         print("-- 请输入内容，2次Enter发送 --")

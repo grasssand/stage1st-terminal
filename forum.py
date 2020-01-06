@@ -54,6 +54,7 @@ class Forum(Stage1stClient):
         self._threads_count = None
         self._posts = None
         self.data = {}
+
         self.threads()
 
     @property
@@ -81,7 +82,7 @@ class Forum(Stage1stClient):
         return self.threads_count // PER_PAGE_THREADS + 1
 
     def threads_list(self):
-        return self.content.get(THREAD_LIST_KEY, [])
+        return self.content.get(THREAD_LIST_KEY)
 
     def thread_types(self):
         return self.content["threadtypes"]["types"]
@@ -95,9 +96,12 @@ class Forum(Stage1stClient):
             "yellow",
             attrs=["bold"],
         )
+
         threads_list = self.threads_list()
-        for i, thread in enumerate(threads_list):
-            self.data[str(i)] = thread["tid"]
+        while threads_list:
+            i = str(len(threads_list))
+            thread = threads_list.pop()
+            self.data[i] = thread["tid"]
             try:
                 message = thread["reply"][0]["message"]
             except KeyError:
@@ -114,20 +118,23 @@ class Forum(Stage1stClient):
             )
             print(f"「{colored(i, 'red', attrs=['bold'])}」 {'=' * 50}\n{tobj}")
 
+        cprint(
+            f"\n{'* ' * 20} {self.name} {self.page} {' *' * 20}\n",
+            "yellow",
+            attrs=["bold"],
+        )
+
     def next_page(self):
         if self.page < self.max_page:
             self.page += 1
-            self.threads()
 
     def prev_page(self):
         if self.page > 1:
             self.page -= 1
-            self.threads()
 
     def jump_to(self, page):
         if page > 0 and page != self.page:
             self.page = min(page, self.max_page)
-            self.threads()
 
     def new_thread(self):
         thread_types = self.thread_types()

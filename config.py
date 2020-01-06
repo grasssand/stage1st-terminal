@@ -36,9 +36,14 @@ URL_REPLY_LIST = (
 URL_REPLY = BASE_API_URL + "index.php?module=sendreply&replysubmit=yes&tid={}"
 URL_FAVOURITE = BASE_API_URL + "index.php?module=favthread&favoritesubmit=yes"
 URL_SEARCH = BASE_URL + "search.php?searchsubmit=yes&mod={}"
-
-BROWSER_URL_FORUM = "https://bbs.saraba1st.com/2b/forum-{}-{}.html"
-BROWSER_URL_THREAD = "https://bbs.saraba1st.com/2b/thread-{}-{}-1.html"
+URL_MY_THREADS = (
+    BASE_URL + "home.php?mod=space&do=thread&from=space&type=thread&uid={}&page={}"
+)
+URL_MY_REPLIES = (
+    BASE_URL + "home.php?mod=space&do=thread&from=space&type=reply&uid={}&page={}"
+)
+BROWSER_URL_FORUM = BASE_URL + "forum-{}-{}.html"
+BROWSER_URL_THREAD = BASE_URL + "thread-{}-{}-1.html"
 
 FORUM_LIST_KEY = "forumlist"
 FORUM_KEY = "forum"
