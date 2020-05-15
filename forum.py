@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import re
 import sys
 
 from config import (
@@ -30,17 +29,17 @@ class Forum(Stage1stClient):
         posts=None,
         todayposts=None,
     ):
-        super().__init__(fid, page)
+        super().__init__(sid=fid, page=page)
         self._name = name
         self._description = description
         self._threads_count = threads_count
         self._posts = posts
-        self.todayposts = todayposts if todayposts else 0
+        self._todayposts = todayposts if todayposts else 0
         self.data = {}
 
     def __str__(self):
         return (
-            f"{self.name} ({colored(self.todayposts, 'green')})\t"
+            f"{self.name} ({colored(self._todayposts, 'green')})\t"
             f"{colored(self.description, 'yellow')}\r"
         )
 
@@ -116,7 +115,9 @@ class Forum(Stage1stClient):
                 message=message,
                 fid=self.id,
             )
-            print(f"「{colored(i, 'red', attrs=['bold'])}」 {'=' * 50}\n{tobj}")
+            print(
+                f"「{colored(i, 'red', attrs=['bold'])}」 {colored('=' * 50, 'yellow')}\n{tobj}"
+            )
 
         cprint(
             f"\n{'* ' * 20} {self.name} {self.page} {' *' * 20}\n",

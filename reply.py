@@ -20,7 +20,7 @@ class Reply(Stage1stClient):
         subject=None,
         fid=None,
     ):
-        super().__init__(sid, page)
+        super().__init__(sid=sid, page=page)
         self.author = author
         self.dateline = dateline
         self.message = message

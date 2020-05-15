@@ -3,8 +3,8 @@
 
 import re
 
-PER_PAGE_THREADS = 10
-PER_PAGE_REPLIES = 10
+PER_PAGE_THREADS = 20
+PER_PAGE_REPLIES = 20
 
 COOKIES_FILE = "cookies.json"
 HEADERS = {
@@ -35,7 +35,7 @@ URL_REPLY_LIST = (
 )
 URL_REPLY = BASE_API_URL + "index.php?module=sendreply&replysubmit=yes&tid={}"
 URL_FAVOURITE = BASE_API_URL + "index.php?module=favthread&favoritesubmit=yes"
-URL_SEARCH = BASE_URL + "search.php?searchsubmit=yes&mod={}"
+URL_SEARCH = BASE_URL + "search.php?searchsubmit=yes&mod={}&page={}"
 URL_MY_THREADS = (
     BASE_URL + "home.php?mod=space&do=thread&from=space&type=thread&uid={}&page={}"
 )

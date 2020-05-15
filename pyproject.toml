@@ -1,22 +1,23 @@
 [tool.poetry]
 name = "stage1st-terminal"
 version = "0.1.0"
-description = "S1 cli-client"
+description = "S1 Client in Terminal"
 authors = ["GrassSand <grasssand@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.6"
 requests-html = "^0.10.0"
 colorama = "^0.4.3"
+blessed = "^1.17.5"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.4.4"
 black = "^19.10b0"
 
+[[tool.poetry.source]]
+name = "tuna"
+url = "https://mirrors.cloud.tencent.com/pypi/simple"
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
-
-[[tool.poetry.source]]
-name = "tuna"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple/"

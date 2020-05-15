@@ -8,22 +8,23 @@ import re
 from abc import abstractmethod
 from xml.etree import ElementTree
 
+from blessed import Terminal
 from requests_html import HTMLSession
 
-from config import COOKIES_FILE, HEADERS, URL_LOGIN
+from config import COOKIES_FILE, HEADERS, URL_LOGIN, URL_SEARCH
 from exception import LoginError, ResourceError
 
 
 class Stage1stClient:
-    def __init__(self, sid, page):
+    def __init__(self, sid, page=1):
         self._id = sid
         self._page = page
         self._content = None
         self._uid = None
         self._formhash = None
-
         self._session = HTMLSession()
         self._session.headers.update(HEADERS)
+        self.term = Terminal()
 
         if os.path.isfile(COOKIES_FILE):
             self.login_with_cookies(COOKIES_FILE)
@@ -99,6 +100,9 @@ class Stage1stClient:
             self._formhash = self.content["formhash"]
         return self._formhash
 
+    def refresh(self):
+        self._content = None
+
     def _get_content(self):
         url = self._build_url()
         resp = self.get(url, to_json=True)
@@ -124,5 +128,14 @@ class Stage1stClient:
         except:
             raise ResourceError("请求失败")
 
-    def refresh(self):
-        self._content = None
+    def search(self):
+        print("「1」帖子, 「2」用户")
+        mod = input("搜索[1]: ")
+        srchtxt = input("关键词: ")
+
+        if srchtxt:
+            url = URL_SEARCH.format("user" if mod == "2" else "forum")
+            data = {"formhash": self.formhash, "srchtxt": srchtxt}
+            html = self.post(url=url, data=data, to_json=False)
+
+            search_result = ""

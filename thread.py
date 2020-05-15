@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import re
 import sys
 
 from config import (
@@ -32,14 +31,14 @@ class Thread(Stage1stClient):
         message=None,
         fid=None,
     ):
-        super().__init__(tid, page)
+        super().__init__(sid=tid, page=page)
         self._author = author
         self._subject = subject
         self._dateline = dateline
         self._views = views
         self._replies_count = replies_count
         self._message = message
-        self.fid = fid
+        self._fid = fid
         self.data = {}
 
     def __str__(self):
@@ -131,7 +130,7 @@ class Thread(Stage1stClient):
                 pid=reply["pid"],
                 tid=self.id,
                 subject=self.subject,
-                fid=self.fid,
+                fid=self._fid,
             )
             print(
                 f"「{colored(i, 'red', attrs=['bold'])}」 {colored('=' * 50, 'yellow')}\n{robj}"

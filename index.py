@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import re
 import sys
 
 from config import FORUM_LIST_KEY, URL_FORUM_LIST, URL_THREAD_LIST, RE_OPT
@@ -12,7 +11,7 @@ from util import colored
 
 class Index(Stage1stClient):
     def __init__(self, sid=0, page=1):
-        super().__init__(sid, page)
+        super().__init__(sid=sid, page=page)
         self.data = {}
 
     def _build_url(self):
